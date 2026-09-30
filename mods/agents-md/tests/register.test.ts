@@ -86,6 +86,49 @@ describe('register', () => {
     ).toEqual({ blocks: BLOCKS, instructionFiles: [] })
   })
 
+  test('a project with neither CLAUDE.md nor AGENTS.md sends a debug line', async ($, on) => {
+    const started = Fixtures.projectOf(on, [], [])
+
+    on('prompt.context', ($, e) => ({
+      blocks: e.blocks,
+      instructionFiles: e.instructionFiles,
+    }))
+
+    const context = await $.prompt.context({
+      blocks: BLOCKS,
+      instructionFiles: [],
+    })
+
+    expect(context.instructionFiles).toEqual([])
+
+    await started.clock.settle()
+
+    expect(started.lines, 'nothing new in the transcript').toEqual([])
+    expect(started.debugLines).toEqual([
+      'no CLAUDE.md or AGENTS.md found under /repo/a/b',
+    ])
+  })
+
+  test('a failed walk sends a debug line', async ($, on) => {
+    const started = Fixtures.unreadableProjectOf(on)
+
+    on('prompt.context', ($, e) => ({
+      blocks: e.blocks,
+      instructionFiles: e.instructionFiles,
+    }))
+
+    expect(
+      await $.prompt.context({ blocks: BLOCKS, instructionFiles: [] }),
+    ).toEqual({ blocks: BLOCKS, instructionFiles: [] })
+
+    await started.clock.settle()
+
+    expect(started.lines, 'nothing new in the transcript').toEqual([])
+    expect(started.debugLines).toEqual([
+      'AGENTS.md walk failed under /repo/a/b',
+    ])
+  })
+
   test(
     'the start sends the mode row alone: no walk, no toast',
     { plugins: [Fixtures.RECORDING] },
