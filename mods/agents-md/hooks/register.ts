@@ -158,6 +158,27 @@ export function register(on: On, options: PluginOptions): void {
       )
     }
 
+    const isFirstEmpty =
+      root !== undefined &&
+      root !== rootLogged &&
+      !isWalkFailed &&
+      added.length === 0
+
+    if (isFirstEmpty) {
+      rootLogged = root
+      $.ui.log('no CLAUDE.md or AGENTS.md found under ' + root, {
+        to: 'debug',
+      })
+    }
+
+    const isFirstFailed =
+      root !== undefined && root !== rootLogged && isWalkFailed
+
+    if (isFirstFailed) {
+      rootLogged = root
+      $.ui.log('AGENTS.md walk failed under ' + root, { to: 'debug' })
+    }
+
     const instructionFiles = Files.withProjectFiles(handed, added)
 
     return next({ ...e, instructionFiles }).finally(() => {
